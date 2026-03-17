@@ -86,16 +86,20 @@ export function CodeInput({
   value,
   onChange,
   onLanguageDetected,
+  maxLength = 2000,
   placeholder = "// paste your code here...",
 }: {
   value: string;
   onChange: (value: string) => void;
   onLanguageDetected?: (language: string) => void;
+  maxLength?: number;
   placeholder?: string;
 }) {
   const [highlightedHtml, setHighlightedHtml] = useState("");
   const highlightRef = useRef<HTMLDivElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
+
+  const isOverLimit = value.length > maxLength;
 
   const highlightCode = useCallback(async (code: string) => {
     if (!code.trim()) {
@@ -150,7 +154,7 @@ export function CodeInput({
         <span className="w-3 h-3 rounded-full bg-accent-green" />
       </div>
 
-      <div className="flex min-h-[360px]">
+      <div className="flex min-h-[360px] max-h-[500px] overflow-hidden">
         <div
           ref={lineNumbersRef}
           className="w-12 py-4 pr-3 pl-4 text-right border-r border-border-primary bg-bg-input shrink-0 font-mono text-xs text-text-tertiary leading-6 overflow-hidden"
@@ -162,11 +166,14 @@ export function CodeInput({
           ))}
         </div>
 
-        <div className="relative flex-1 overflow-hidden bg-bg-input">
+        <div className="relative flex-1 overflow-y-auto bg-bg-input">
           <div
             ref={highlightRef}
-            className="code-highlight absolute inset-0 overflow-auto font-mono text-sm leading-6 pointer-events-none"
-            style={{ padding: "1rem" }}
+            className="code-highlight absolute inset-0 overflow-y-auto font-mono text-sm leading-6 pointer-events-none"
+            style={{
+              padding: "1rem",
+              backgroundColor: "transparent !important",
+            }}
             dangerouslySetInnerHTML={{ __html: highlightedHtml }}
           />
           <textarea
@@ -181,6 +188,18 @@ export function CodeInput({
             autoCapitalize="off"
           />
         </div>
+      </div>
+
+      <div
+        className={`
+          h-8 px-4 flex items-center justify-end border-t border-border-primary bg-bg-input
+          font-mono text-xs
+          ${isOverLimit ? "text-accent-red" : "text-text-tertiary"}
+        `}
+      >
+        <span>
+          {value.length}/{maxLength}
+        </span>
       </div>
     </div>
   );

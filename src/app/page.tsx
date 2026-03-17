@@ -38,6 +38,8 @@ const leaderboardData = [
 export default function HomePage() {
   const [code, setCode] = useState("");
   const [roastMode, setRoastMode] = useState(true);
+  const maxLength = 2000;
+  const isOverLimit = code.length > maxLength;
 
   return (
     <div className="min-h-screen bg-bg-page">
@@ -60,6 +62,7 @@ export default function HomePage() {
               value={code}
               onChange={setCode}
               onLanguageDetected={(lang) => console.log("Detected:", lang)}
+              maxLength={maxLength}
             />
           </div>
 
@@ -80,7 +83,9 @@ export default function HomePage() {
               </span>
             </div>
 
-            <Button disabled={!code.trim()}>$ roast_my_code</Button>
+            <Button disabled={!code.trim() || isOverLimit}>
+              $ roast_my_code
+            </Button>
           </div>
 
           {/* Footer Stats */}

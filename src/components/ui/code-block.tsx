@@ -4,9 +4,17 @@ interface CodeBlockProps {
   code: string;
   lang: string;
   filename?: string;
+  showHeader?: boolean;
+  className?: string;
 }
 
-export async function CodeBlock({ code, lang, filename }: CodeBlockProps) {
+export async function CodeBlock({
+  code,
+  lang,
+  filename,
+  showHeader = true,
+  className = "",
+}: CodeBlockProps) {
   const html = await codeToHtml(code, {
     lang,
     theme: "vesper",
@@ -19,8 +27,21 @@ export async function CodeBlock({ code, lang, filename }: CodeBlockProps) {
     ],
   });
 
+  if (!showHeader) {
+    return (
+      <div className={`w-full overflow-hidden ${className}`}>
+        <div
+          className="w-full bg-bg-input p-4 overflow-x-auto text-sm"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="rounded-lg border border-border-primary overflow-hidden w-full max-w-xl">
+    <div
+      className={`rounded-lg border border-border-primary overflow-hidden w-full ${className}`}
+    >
       <div className="flex items-center gap-3 h-10 px-4 border-b border-border-primary bg-bg-input">
         <span className="w-2.5 h-2.5 rounded-full bg-accent-red" />
         <span className="w-2.5 h-2.5 rounded-full bg-accent-amber" />

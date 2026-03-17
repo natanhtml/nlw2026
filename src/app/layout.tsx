@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
+import { TRPCReactProvider } from "@/trpc/client";
 
 export const metadata: Metadata = {
   title: "devroast - paste your code. get roasted.",
@@ -16,8 +17,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased bg-bg-page text-text-primary">
-        <Navbar />
-        <main className="pt-14">{children}</main>
+        <TRPCReactProvider>
+          <Navbar />
+          <main className="pt-14">{children}</main>
+        </TRPCReactProvider>
       </body>
     </html>
   );

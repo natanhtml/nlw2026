@@ -53,6 +53,7 @@ export const roasts = pgTable("roasts", {
     .references(() => submissions.id),
   content: text("content").notNull(),
   roastType: roastTypeEnum("roast_type").notNull(),
+  ogImagePath: text("og_image_path"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

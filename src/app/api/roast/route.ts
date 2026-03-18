@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.redirect(
-      new URL(`/results/${submission.id}`, request.url),
+      new URL(`/results/${String(submission.id)}`, request.url),
     );
   } catch (error) {
     console.error("Error processing roast:", error);

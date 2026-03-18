@@ -1,78 +1,38 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CodeBlock } from "@/components/ui/code-block";
+import { db } from "@/db";
+import { roasts, scores, submissions } from "@/db/schema";
 
 export const metadata: Metadata = {
   title: "Roast Results - devroast",
   description: "Your code got roasted",
 };
 
-const staticResultData = {
-  id: "123e4567-e89b-12d3-a456-426614174000",
-  score: 3.5,
-  verdict: "needs_serious_help",
-  quote:
-    "this code looks like it was written during a power outage... in 2005.",
-  language: "javascript",
-  lines: 7,
-  code: `function calculateTotal(items) {
-  var total = 0;
-  for (var i = 0; i < items.length; i++) {
-    total = total + items[i].price;
+async function getRoastData(id: string) {
+  // Validate UUID format
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) {
+    console.error("Invalid UUID format:", id);
+    return null;
   }
-  return total;
-}
 
-// TODO: handle tax calculation
-// TODO: handle currency conversion
-}`,
-  issues: [
-    {
-      type: "critical",
-      title: "using var instead of const/let",
-      description:
-        "var is function-scoped and leads to hoisting bugs. use const by default, let when reassignment is needed.",
-    },
-    {
-      type: "warning",
-      title: "imperative loop pattern",
-      description:
-        "for loops are verbose and error-prone. use .reduce() or .map() for cleaner, functional transformations.",
-    },
-    {
-      type: "good",
-      title: "clear naming conventions",
-      description:
-        "calculateTotal and items are descriptive, self-documenting names that communicate intent without comments.",
-    },
-    {
-      type: "good",
-      title: "single responsibility",
-      description:
-        "the function does one thing well — calculates a total. no side effects, no mixed concerns, no hidden complexity.",
-    },
-  ],
-  suggestedFix: {
-    fromFile: "your_code.ts",
-    toFile: "improved_code.ts",
-    lines: [
-      { type: "context", content: "function calculateTotal(items) {" },
-      { type: "removed", content: "  var total = 0;" },
-      {
-        type: "removed",
-        content: "  for (var i = 0; i < items.length; i++) {",
-      },
-      { type: "removed", content: "    total = total + items[i].price;" },
-      { type: "removed", content: "  }" },
-      { type: "removed", content: "  return total;" },
-      {
-        type: "added",
-        content: "  return items.reduce((sum, item) => sum + item.price, 0);",
-      },
-      { type: "context", content: "}" },
-    ],
-  },
-};
+  const submission = await db.query.submissions.findFirst({
+    where: (submissions, { eq }) => eq(submissions.id, id),
+  });
+
+  if (!submission) return null;
+
+  const roast = await db.query.roasts.findFirst({
+    where: (roasts, { eq }) => eq(roasts.submissionId, id),
+  });
+
+  const score = await db.query.scores.findFirst({
+    where: (scores, { eq }) => eq(scores.submissionId, id),
+  });
+
+  return { submission, roast, score };
+}
 
 function ScoreRing({ score }: { score: number }) {
   return (
@@ -169,46 +129,48 @@ function DiffLine({
   );
 }
 
-export default function RoastResultsPage() {
-  const result = staticResultData;
+export default async function RoastResultsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const data = await getRoastData(id);
+
+  if (!data) {
+    return (
+      <div className="max-w-[1440px] mx-auto px-10 py-10 flex flex-col items-center justify-center min-h-[50vh]">
+        <h1 className="font-mono text-2xl text-text-primary mb-4">
+          Roast not found
+        </h1>
+        <p className="font-mono text-sm text-text-secondary">
+          This roast doesn&apos;t exist or has been deleted.
+        </p>
+      </div>
+    );
+  }
+
+  const { submission, roast, score } = data;
+  const codeLines = submission.code.split("\n").length;
 
   return (
     <div className="max-w-[1440px] mx-auto px-10 py-10 flex flex-col gap-10">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-mono text-xl font-bold text-accent-green">
-              &gt;
-            </span>
-            <span className="font-mono text-lg font-medium text-text-primary">
-              devroast
-            </span>
-          </Link>
-        </div>
-        <Link
-          href="/leaderboard"
-          className="font-mono text-sm text-text-secondary hover:text-text-primary transition-colors"
-        >
-          leaderboard
-        </Link>
-      </div>
-
       <div className="flex items-center gap-12">
-        <ScoreRing score={result.score} />
+        <ScoreRing score={score?.totalScore ?? 0} />
         <div className="flex flex-col gap-4 flex-1">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-accent-red" />
             <span className="font-mono text-sm font-medium text-accent-red">
-              verdict: {result.verdict}
+              verdict: {(score?.totalScore ?? 0) < 5 ? "needs_work" : "decent"}
             </span>
           </div>
           <h1 className="font-mono text-xl text-text-primary leading-relaxed">
-            &quot;{result.quote}&quot;
+            &quot;{roast?.content ?? "No roast generated"}&quot;
           </h1>
           <div className="flex items-center gap-4 text-text-tertiary font-mono text-xs">
-            <span>lang: {result.language}</span>
+            <span>lang: {submission.language}</span>
             <span>·</span>
-            <span>{result.lines} lines</span>
+            <span>{codeLines} lines</span>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -233,8 +195,8 @@ export default function RoastResultsPage() {
           </span>
         </div>
         <CodeBlock
-          code={result.code}
-          lang={result.language}
+          code={submission.code}
+          lang={submission.language}
           showHeader={false}
           className="max-w-none"
         />
@@ -252,43 +214,21 @@ export default function RoastResultsPage() {
           </span>
         </div>
         <div className="grid grid-cols-2 gap-5">
-          {result.issues.map((issue, i) => (
-            <IssueCard
-              key={i}
-              type={issue.type as "critical" | "warning" | "good"}
-              title={issue.title}
-              description={issue.description}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="h-px bg-border-primary" />
-
-      <div className="flex flex-col gap-6">
-        <div className="flex items-center gap-2">
-          <span className="text-accent-green font-mono text-sm font-bold">
-            {"//"}
-          </span>
-          <span className="font-mono text-sm font-bold text-text-primary">
-            suggested_fix
-          </span>
-        </div>
-        <div className="border border-border-primary overflow-hidden">
-          <div className="h-10 px-4 flex items-center border-b border-border-primary bg-bg-surface">
-            <span className="font-mono text-xs text-text-secondary">
-              {result.suggestedFix.fromFile} → {result.suggestedFix.toFile}
-            </span>
-          </div>
-          <div className="bg-bg-input">
-            {result.suggestedFix.lines.map((line, i) => (
-              <DiffLine
-                key={i}
-                type={line.type as "context" | "removed" | "added"}
-                content={line.content}
-              />
-            ))}
-          </div>
+          <IssueCard
+            type="critical"
+            title="Code Quality"
+            description={`Score: ${score?.codeQuality ?? 0}/10 - ${(score?.codeQuality ?? 0) < 5 ? "Needs improvement" : "Looking good"}`}
+          />
+          <IssueCard
+            type="warning"
+            title="Readability"
+            description={`Score: ${score?.readability ?? 0}/10 - ${(score?.readability ?? 0) < 5 ? "Hard to read" : "Easy to follow"}`}
+          />
+          <IssueCard
+            type="good"
+            title="Best Practices"
+            description={`Score: ${score?.bestPractices ?? 0}/10 - ${(score?.bestPractices ?? 0) < 5 ? "Room for improvement" : "Follows best practices"}`}
+          />
         </div>
       </div>
     </div>

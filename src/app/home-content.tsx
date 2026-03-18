@@ -1,46 +1,63 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import LeaderboardPreview from "@/components/leaderboard-preview";
 import { Metrics } from "@/components/metrics";
 import { Button } from "@/components/ui/button";
 import { CodeInput } from "@/components/ui/code-input";
 import { Toggle } from "@/components/ui/toggle";
 
-const leaderboardData = [
-  {
-    rank: 1,
-    score: 1.2,
-    code: [
-      'eval(prompt("enter code"))',
-      "document.write(response)",
-      "// trust the user lol",
-    ],
-    lang: "javascript",
-  },
-  {
-    rank: 2,
-    score: 1.8,
-    code: [
-      "if (x == true) { return true; }",
-      "else if (x == false) { return false; }",
-      "else { return !false; }",
-    ],
-    lang: "typescript",
-  },
-  {
-    rank: 3,
-    score: 2.1,
-    code: ["SELECT * FROM users WHERE 1=1", "-- TODO: add authentication"],
-    lang: "sql",
-  },
-];
-
-export function HomeContent() {
+export function HomeContent({
+  leaderboardPreviewData,
+}: {
+  leaderboardPreviewData?: {
+    worstCodes: any[];
+    metrics: { totalCodes: number; avgScore: number };
+  };
+}) {
   const [code, setCode] = useState("");
   const [roastMode, setRoastMode] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
   const maxLength = 2000;
   const isOverLimit = code.length > maxLength;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!code.trim() || isOverLimit || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/roast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          language: "javascript",
+          roastType: roastMode ? "sarcastic" : "constructive",
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("API Error:", errorData);
+        throw new Error(errorData.error || "Failed to submit code");
+      }
+
+      if (response.redirected) {
+        router.push(response.url);
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      setError("Failed to submit code. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-bg-page">
@@ -84,10 +101,20 @@ export function HomeContent() {
               </span>
             </div>
 
-            <Button disabled={!code.trim() || isOverLimit}>
-              $ roast_my_code
+            <Button
+              disabled={!code.trim() || isOverLimit || isSubmitting}
+              onClick={handleSubmit}
+            >
+              {isSubmitting ? "roasting..." : "$ roast_my_code"}
             </Button>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="w-full max-w-[780px] p-4 bg-accent-red/10 border border-accent-red rounded">
+              <span className="font-mono text-sm text-accent-red">{error}</span>
+            </div>
+          )}
 
           {/* Footer Stats */}
           <Metrics />
@@ -101,75 +128,25 @@ export function HomeContent() {
               <h2 className="font-mono text-lg font-bold text-text-primary">
                 {/* the worst code on the internet, ranked by shame */}
               </h2>
-              <Link
+              <a
                 href="/leaderboard"
                 className="px-3 py-1.5 font-mono text-xs text-text-secondary border border-border-primary rounded hover:bg-bg-input transition-colors"
               >
                 view all &gt;&gt;
-              </Link>
+              </a>
             </div>
 
-            <div className="rounded-lg border border-border-primary overflow-hidden">
-              {/* Table Header */}
-              <div className="h-10 px-5 flex items-center bg-bg-surface border-b border-border-primary">
-                <span className="w-12 font-mono text-xs text-text-tertiary font-medium">
-                  #
-                </span>
-                <span className="w-16 font-mono text-xs text-text-tertiary font-medium">
-                  score
-                </span>
-                <span className="flex-1 font-mono text-xs text-text-tertiary font-medium">
-                  code
-                </span>
-                <span className="w-24 font-mono text-xs text-text-tertiary font-medium">
-                  lang
-                </span>
-              </div>
-
-              {/* Table Rows */}
-              {leaderboardData.map((item) => (
-                <div
-                  key={`rank-${item.rank}`}
-                  className="px-5 py-4 flex items-center border-b border-border-primary last:border-b-0"
-                >
-                  <span
-                    className={`w-12 font-mono text-xs font-medium ${
-                      item.rank === 1
-                        ? "text-accent-amber"
-                        : "text-text-secondary"
-                    }`}
-                  >
-                    {item.rank}
-                  </span>
-                  <span className="w-16 font-mono text-xs font-bold text-accent-red">
-                    {item.score.toFixed(1)}
-                  </span>
-                  <div className="flex-1 flex flex-col gap-0.5">
-                    {item.code.map((line, idx) => (
-                      <span
-                        key={`code-${item.rank}-${idx}`}
-                        className="font-mono text-xs text-text-primary truncate"
-                      >
-                        {line}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="w-24 font-mono text-xs text-text-secondary">
-                    {item.lang}
-                  </span>
-                </div>
-              ))}
-
-              {/* Footer Hint */}
-              <div className="px-5 py-3 text-center">
-                <span className="font-mono text-xs text-text-tertiary">
-                  showing top 3 of 2,847 ·{" "}
-                  <Link href="/leaderboard" className="hover:underline">
-                    view full leaderboard &gt;&gt;
-                  </Link>
-                </span>
-              </div>
-            </div>
+            {leaderboardPreviewData ? (
+              <LeaderboardPreview
+                worstCodes={leaderboardPreviewData.worstCodes}
+                metrics={leaderboardPreviewData.metrics}
+              />
+            ) : (
+              <LeaderboardPreview
+                worstCodes={[]}
+                metrics={{ totalCodes: 0, avgScore: 0 }}
+              />
+            )}
           </div>
 
           {/* Bottom Spacer */}

@@ -108,3 +108,34 @@ Button.displayName = 'Button';
 4. Criar componente com forwardRef
 5. Usar named export
 6. Criar página de exemplo em src/app/components/page.tsx
+
+## Collapsible
+
+Usar `@base-ui/react` para primitivos de collapsible:
+
+```tsx
+import { Collapsible as BaseCollapsible } from "@base-ui/react/collapsible";
+
+export const Collapsible = React.forwardRef<HTMLDivElement, CollapsibleProps>(
+  ({ className, children, ...props }, ref) => {
+    return (
+      <BaseCollapsible.Root ref={ref} className={className} {...props}>
+        {children}
+      </BaseCollapsible.Root>
+    );
+  }
+);
+
+export const CollapsibleTrigger = React.forwardRef<...>(...);
+export const CollapsibleContent = React.forwardRef<...>(...);
+```
+
+Para código highlightado (shiki) em Client Components:
+
+1. Criar procedure tRPC que retorna `codeHtml` pré-processado
+2. Criar componente `CodeInline` que renderiza HTML:
+```tsx
+export function CodeInline({ codeHtml }: { codeHtml: string }) {
+  return <div dangerouslySetInnerHTML={{ __html: codeHtml }} />;
+}
+```

@@ -17,10 +17,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased bg-bg-page text-text-primary">
-        <TRPCReactProvider>
-          <Navbar />
-          <main className="pt-14">{children}</main>
-        </TRPCReactProvider>
+        <Navbar />
+        <main className="pt-14">
+          <TRPCReactProvider>{children}</TRPCReactProvider>
+        </main>
       </body>
     </html>
   );

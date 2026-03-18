@@ -111,6 +111,13 @@ export function CodeInput({
       const html = await codeToHtml(code, {
         lang: lang === "plaintext" ? "text" : lang,
         theme: "vesper",
+        transformers: [
+          {
+            line(node) {
+              this.addClassToHast(node, "code-line");
+            },
+          },
+        ],
       });
       setHighlightedHtml(html);
     } catch {
@@ -143,7 +150,7 @@ export function CodeInput({
       lineNumbersRef.current.scrollTop = target.scrollTop;
   };
 
-  const lines = value ? value.split("\n") : [""];
+  const lines = value ? value.split("\n").filter((line) => line !== "") : [""];
   const lineCount = Math.max(lines.length, 15);
 
   return (
@@ -173,6 +180,7 @@ export function CodeInput({
             style={{
               padding: "1rem",
               backgroundColor: "transparent !important",
+              zIndex: 1,
             }}
             dangerouslySetInnerHTML={{ __html: highlightedHtml }}
           />
@@ -180,7 +188,13 @@ export function CodeInput({
             value={value}
             onChange={handleChange}
             onScroll={handleScroll}
-            className="absolute inset-0 w-full h-full p-4 bg-transparent text-transparent caret-white font-mono text-sm leading-6 resize-none focus:outline-none"
+            className="code-input-textarea absolute inset-0 w-full h-full p-4 bg-transparent font-mono text-sm leading-6 resize-none focus:outline-none caret-white"
+            style={{
+              color: "transparent !important",
+              WebkitTextFillColor: "transparent !important",
+              background: "transparent !important",
+              zIndex: 2,
+            }}
             placeholder={placeholder}
             spellCheck={false}
             autoComplete="off"

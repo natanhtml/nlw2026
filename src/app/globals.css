@@ -1,21 +1,10 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme {
-  --color-bg-page: #0a0a0a;
-  --color-bg-input: #2a2a2a;
-  --color-bg-surface: #1a1a1a;
-  --color-border-primary: #111111;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #6b7280;
-  --color-text-tertiary: #71717a;
-  --color-accent-green: #10b981;
-  --color-accent-red: #ef4444;
-  --color-accent-amber: #f59e0b;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -45,7 +34,6 @@ body {
 .code-highlight div[style*="background"],
 .code-highlight div[style*="background-color"],
 pre[class*="shiki"],
-pre[class*="shiki"] *,
 code[class*="shiki"],
 code[class*="shiki"] * {
   background: transparent !important;
@@ -56,10 +44,150 @@ code[class*="shiki"] * {
   border-radius: 0 !important;
 }
 
+/* Desabilitar números de linha automáticos do Shiki no code-highlight */
+.code-highlight pre.shiki {
+  counter-reset: none !important;
+}
+
+.code-highlight pre.shiki .line::before,
+.code-highlight pre.shiki .code-line::before,
+.code-highlight pre.shiki span.line::before,
+.code-highlight pre.shiki span.code-line::before {
+  display: none !important;
+}
+
+/* Remover padding-left dos números automáticos no code-highlight */
+.code-highlight pre.shiki .line,
+.code-highlight pre.shiki .code-line,
+.code-highlight pre.shiki span.line,
+.code-highlight pre.shiki span.code-line {
+  padding-left: 0 !important;
+}
+
+/* Code input textarea - texto transparente com caret visível */
+.code-input-textarea {
+  color: transparent !important;
+  caret-color: #ffffff !important;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5rem !important;
+}
+
+/* Garantir que qualquer textarea em code-highlight tenha texto transparente */
+.code-highlight + textarea {
+  color: transparent !important;
+  caret-color: #ffffff !important;
+}
+
+/* Sobrescrever qualquer cor de texto no textarea do code-input */
+textarea.code-input-textarea,
+.code-highlight + textarea,
+.text-transparent {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  caret-color: #ffffff !important;
+}
+
+/* Texto transparente específico para textarea dentro do code-input */
+.code-input-textarea {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  background: transparent !important;
+  caret-color: #ffffff !important;
+}
+
+/* Garantir sincronização entre textarea e highlight */
+.code-highlight {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5rem !important;
+}
+
 code,
 pre {
   background: transparent;
   border: none;
   margin: 0;
   padding: 0;
+}
+
+/* Shiki line numbers and dense layout */
+pre.shiki {
+  counter-reset: line;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+pre.shiki code {
+  display: block;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+pre.shiki code > span {
+  display: block !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+pre.shiki .line,
+pre.shiki .code-line,
+pre.shiki span.line,
+pre.shiki span.code-line {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  padding-left: 3rem !important;
+  padding-right: 0 !important;
+  position: relative;
+  min-height: 1.5rem !important;
+  height: 1.5rem !important;
+  line-height: 1.5 !important;
+  vertical-align: top !important;
+  border: none !important;
+}
+
+pre.shiki .line::before,
+pre.shiki .code-line::before,
+pre.shiki span.line::before,
+pre.shiki span.code-line::before {
+  counter-increment: line;
+  content: counter(line);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 2rem;
+  padding-right: 0.5rem;
+  text-align: right;
+  color: #52525b !important;
+  font-size: 13px;
+  font-family: ui-monospace, monospace;
+  user-select: none;
+  line-height: 1.5 !important;
+  height: 1.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Custom dark scrollbar for code container */
+.code-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.code-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-container::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 9999px;
+}
+
+.code-container::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
 }
